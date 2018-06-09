@@ -37,24 +37,26 @@ const fetchLatest = async () => {
   return output;
 }
 
-const index = async (req, res, next) => {
-  const out = await fetchLatest().catch(err => 
-    res.status(500).json({error: err.message})
-  );
-  const processedOut = new Map();
-  Object.keys(out).forEach(key => {
-    processedOut[key] = [];
-    out[key].forEach(gif => {
-      let currentGif = {};
-      currentGif['id'] = gif['id'];
-      currentGif['url'] = gif['url'];
-      currentGif['name(slug)'] = gif['slug'];
-      currentGif['description'] = gif['title'];
-      processedOut[key].push(currentGif);
+const index = (req, res, next) => {
+  fetchLatest()
+    .then(out => {
+      const processedOut = new Map();
+      Object.keys(out).forEach(key => {
+        processedOut[key] = [];
+        out[key].forEach(gif => {
+          let currentGif = {};
+          currentGif['id'] = gif['id'];
+          currentGif['url'] = gif['url'];
+          currentGif['name(slug)'] = gif['slug'];
+          currentGif['description'] = gif['title'];
+          processedOut[key].push(currentGif);
+        })
+      });
+      res.status(200).json(processedOut);
     })
-  });
-  
-  res.status(200).json(processedOut);
+    .catch(err =>
+      res.status(500).json({error: err.message})
+    );
 };
 
 module.exports = { index };
