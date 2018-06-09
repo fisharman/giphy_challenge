@@ -1,63 +1,50 @@
+const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 
-const fetchLatest = async (ids) => {
+// post { "ids": ["l41m6YZzaqxZQp4IM", "Sq6i5vJBUPM0U", "Rse8lCnT2SNJ6", "h7N7tjrgPpRiE"] }
 
-    const result = await axios.get('http://api.giphy.com/v1/gifs/trending', {
+const fetchGIFs = async (ids) => {
+    ids = ids.toString();
+    let res;
+    try {
+        res = await axios.get('http://api.giphy.com/v1/gifs', {
             headers: {
-                api_key: 'LEls10pQ1lqL1lxLehiPoD0P61SpGcQK'
+                api_key: 'LEls10pQ1lqL1lxLehiPoD0P61SpGcQK',
+            },
+            params: {
+                ids: ids
             }
-        })
-        .catch(err => console.log(err))
-
-    const output = new Map();
-    result.data.data.forEach(gif => {
-        const year = gif['import_datetime'].substring(0, 4);
-        if (!output[year]) {
-            output[year] = [];
-        }
-        output[year].push(gif);
-    })
-    return output;
+        });
+    } catch (err) {
+        throw new Error('giphy API error');
+    }
+    
+    let processedOut = [];
+    res.data.data.forEach(gif => {
+        let currentGif = {};
+        currentGif['id'] = gif['id'];
+        currentGif['url'] = gif['url'];
+        currentGif['name(slug)'] = gif['slug'];
+        currentGif['description'] = gif['title'];
+        processedOut.push(currentGif);
+    });
+    return processedOut;
 }
 
 const index = async (req, res, next) => {
-    const ids = req.body;
-
-    const body = {
-        'l41m6YZzaqxZQp4IM': {
-            "id": "l41m6YZzaqxZQp4IM",
-            "url": "https://giphy.com/gifs/ocean-dolphin-swim-l41m6YZzaqxZQp4IM",
-            "name(slug)": "ocean-dolphin-swim-l41m6YZzaqxZQp4IM",
-            "description": "uc santa cruz swimming GIF by University of California"
-        },
-        "Sq6i5vJBUPM0U": {
-            "id": "Sq6i5vJBUPM0U",
-            "url": "https://giphy.com/gifs/tvland-tribute-joan-rivers-howd-you-get-so-rich-Sq6i5vJBUPM0U",
-            "name(slug)": "tvland-tribute-joan-rivers-howd-you-get-so-rich-Sq6i5vJBUPM0U",
-            "description": "joan rivers comedy GIF by TV Land Classic"
-        },
-        "Rse8lCnT2SNJ6": {
-            "id": "Rse8lCnT2SNJ6",
-            "url": "https://giphy.com/gifs/nfl-august-chick-Rse8lCnT2SNJ6",
-            "name(slug)": "nfl-august-chick-Rse8lCnT2SNJ6",
-            "description": "rich damon wayans GIF"
-        },
-        "h7N7tjrgPpRiE": {
-            "id": "h7N7tjrgPpRiE",
-            "url": "https://giphy.com/gifs/buzzfeed-cheap-tobago-h7N7tjrgPpRiE",
-            "name(slug)": "buzzfeed-cheap-tobago-h7N7tjrgPpRiE",
-            "description": "best friends GIF"
-        }
+    const out = await fetchGIFs(req.body.ids).catch(err => {
+        console.log('error');
+        return res.status(500).json({error: err.message})
     }
-
-    fs.writeFile("./savedGIFs.txt", JSON.stringify(body), function (err) {
+        
+    );
+    fs.writeFile("./savedGIFs.txt", JSON.stringify(out), function (err) {
         if (err) {
             return res.status(500).json({ error: 'unable to save' });
         }
-        res.status(201).json({ data: 'save success' });
     })
-
+    res.status(201).json({ data: "save success" });
 };
 
 module.exports = { index };

@@ -38,10 +38,9 @@ const fetchLatest = async () => {
 }
 
 const index = async (req, res, next) => {
-  const out = await fetchLatest().catch(err =>
+  const out = await fetchLatest().catch(err => 
     res.status(500).json({error: err.message})
   );
-  
   const processedOut = new Map();
   Object.keys(out).forEach(key => {
     processedOut[key] = [];
