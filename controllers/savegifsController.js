@@ -32,19 +32,20 @@ const fetchGIFs = async (ids) => {
     return processedOut;
 }
 
-const index = async (req, res, next) => {
-    const out = await fetchGIFs(req.body.ids).catch(err => {
-        console.log('error');
-        return res.status(500).json({error: err.message})
-    }
-        
-    );
-    fs.writeFile("./savedGIFs.txt", JSON.stringify(out), function (err) {
-        if (err) {
-            return res.status(500).json({ error: 'unable to save' });
-        }
-    })
-    res.status(201).json({ data: "save success" });
+const index = (req, res, next) => {
+    fetchGIFs(req.body.ids)
+        .then(out => {
+            fs.writeFile("./savedGIFs.txt", JSON.stringify(out), err => {
+                if (err) {
+                    return res.status(500).json({error: 'unable to save'});
+                }
+            })
+            res.status(201).json({data: "save success"});
+        })
+        .catch(err =>
+            res.status(500).json({error: err.message})
+        );
+
 };
 
 module.exports = { index };
